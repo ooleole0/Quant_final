@@ -11,8 +11,9 @@ raw_data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
     BIDLO = abs(BIDLO),
     ASKHI = abs(ASKHI),
     PRC = abs(PRC)) %>%
-  # filter share codes to 10 and 11 only.
-  filter(SHRCD %in% c(10, 11)) %>%
+  # filter share codes to 10 and 11, and data date after 2000 only
+  filter(SHRCD %in% c(10, 11),
+         date >= '2000-01-01') %>%
   # group by PERMNO then calculate last 12 months rolling avg trading volumes.
   group_by(PERMNO) %>%
   mutate(roll_vol = rollmean(VOL, k =12, na.pad=TRUE, align="right"))
