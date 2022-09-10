@@ -33,19 +33,20 @@ data <- data %>%
     month <= 6 ~ year - 1,
     month >= 7 ~ year)
            ) %>%
-  select(year, month,sorting_year, PERMNO, PRC, RET, VOL, VOLD, ILLIQ, roll_vol) %>%
+  select(date, year, month,sorting_year, PERMNO, PRC, RET, VOL, VOLD, ILLIQ, roll_vol) %>%
   drop_na()
   
 # read vincent's fama-related data
-data_fama <- read_csv("chars_data") %>%
+data_fama <- read_csv("chars_data.csv") %>%
   select(PERMNO, gvkey, sorting_year, BM, size)
-
+data_mktcap <- read_csv("mktcap_monthly.csv") %>%
+  select(PERMNO, year, month, mktcap)
 # merge liquidity and fama-related variables
 data_merged <- data %>%
-  inner_join(data_fama, by = c("PERMNO","sorting_year"))
-
+  inner_join(data_fama, by = c("PERMNO","sorting_year")) %>%
+  inner_join(data_mktcap, by = c("PERMNO","year", "month"))
 # remove unnecessary data to save memories
-rm(data, data_fama)
+rm(data, data_fama, data_mktcap)
 
 # compute the breakpoints of BM
 BM_breakpoints <- data_merged %>%
@@ -112,6 +113,32 @@ data_merged <- data_merged %>%
 
 # pick the needed "type" variables
 data_typed <- data_merged %>%
-  select(year,month, PERMNO,RET, size, BM_type, Size_type, roll_vol_type, ILLIQ_type) %>%
+  select(date, PERMNO,RET, size, mktcap, BM_type, Size_type, roll_vol_type, ILLIQ_type) %>%
   group_by(PERMNO) %>%
-  mutate(weight = lag(size))
+  mutate(weight = lag(mktcap))
+
+# valuate fama and roll_vol return
+portf_3x2x3_vol <- data_typed %>% 
+  group_by(date,BM_type,Size_type, roll_vol_type) %>% 
+  summarise(vwret = weighted.mean(100*RET,w=weight,na.rm=T))
+
+portf_3x2x3_vol <- portf_3x2x3_vol %>% 
+  pivot_wider(
+    id_cols = date,
+    values_from= vwret,
+    names_from = c(BM_type,Size_type, roll_vol_type),
+    names_sep = ""
+  )
+
+# valuate fama and ILLIQ return
+portf_3x2x3_ILLIQ <- data_typed %>% 
+  group_by(date,BM_type,Size_type, ILLIQ_type) %>% 
+  summarise(vwret = weighted.mean(100*RET,w=weight,na.rm=T))
+
+portf_3x2x3_ILLIQ <- portf_3x2x3_ILLIQ %>% 
+  pivot_wider(
+    id_cols = date,
+    values_from= vwret,
+    names_from = c(BM_type,Size_type, ILLIQ_type),
+    names_sep = ""
+  )
