@@ -170,3 +170,31 @@ portf_3_vol <- portf_3_vol %>%
     names_sep = ""
   )
 
+# valuate ILLIQ return
+portf_3_ILLIQ <- data_typed %>% 
+  group_by(date,ILLIQ_type) %>% 
+  summarise(vwret = weighted_mean(100 * RET,w = weight, na.rm = T))
+
+portf_3_ILLIQ <- portf_3_ILLIQ %>% 
+  pivot_wider(
+    id_cols = date,
+    values_from= vwret,
+    names_from = c(ILLIQ_type),
+    names_sep = ""
+  )
+
+
+# long low vol
+vol_data_long <- portf_3_vol %>% 
+  mutate(
+    vol_return = L
+  ) %>% 
+  select(date,vol_return)
+
+
+# long low ILLIQ
+ILLIQ_data_long <- portf_3_ILLIQ %>%
+  mutate(
+    ILLIQ_return = L
+  ) %>%
+  select(date, ILLIQ_return)
