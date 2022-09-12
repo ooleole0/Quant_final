@@ -34,7 +34,6 @@ data <- data %>%
     month >= 7 ~ year)
            ) %>%
   select(date, year, month,sorting_year, PERMNO, PRC, RET, VOL, VOLD, ILLIQ, roll_vol) %>%
-  mutate(RET = RET / 100) %>%
   drop_na()
   
 # # read vincent's fama-related data
@@ -175,7 +174,7 @@ weighted_mean = function(x, w, ..., na.rm = F){
 # valuate roll_vol return
 portf_vol <- data_typed %>% 
   group_by(date,roll_vol_type) %>% 
-  summarise(vwret = weighted_mean(100 * RET,w = weight, na.rm = T))
+  summarise(vwret = weighted_mean(RET,w = weight, na.rm = T))
 
 portf_vol <- portf_vol %>% 
   pivot_wider(
@@ -188,7 +187,7 @@ portf_vol <- portf_vol %>%
 # valuate ILLIQ return
 portf_ILLIQ <- data_typed %>% 
   group_by(date,ILLIQ_type) %>% 
-  summarise(vwret = weighted_mean(100 * RET,w = weight, na.rm = T))
+  summarise(vwret = weighted_mean(RET,w = weight, na.rm = T))
 
 portf_ILLIQ <- portf_ILLIQ %>% 
   pivot_wider(
@@ -222,17 +221,19 @@ portf_cum <- portf %>%
   ) %>%
   select(date, SP_500_cum:vol_5_cum)
 
-# long low vol
-vol_data_long <- portf_vol %>% 
-  mutate(
-    vol_return = vol_1
-  ) %>% 
-  select(date,vol_return)
-
-
-# long low ILLIQ
-ILLIQ_data_long <- portf_ILLIQ %>%
-  mutate(
-    ILLIQ_return = ILLIQ_5
-  ) %>%
-  select(date, ILLIQ_return)
+# # long low vol
+# vol_data_long <- portf_vol %>% 
+#   mutate(
+#     vol_return = vol_1
+#   ) %>% 
+#   select(date,vol_return) %>%
+#   drop_na()
+# 
+# 
+# # long low ILLIQ
+# ILLIQ_data_long <- portf_ILLIQ %>%
+#   mutate(
+#     ILLIQ_return = ILLIQ_5
+#   ) %>%
+#   select(date, ILLIQ_return) %>%
+#   drop_na()
