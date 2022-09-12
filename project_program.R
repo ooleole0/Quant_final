@@ -34,23 +34,24 @@ data <- data %>%
     month >= 7 ~ year)
            ) %>%
   select(date, year, month,sorting_year, PERMNO, PRC, RET, VOL, VOLD, ILLIQ, roll_vol) %>%
+  mutate(RET = RET / 100) %>%
   drop_na()
   
-# read vincent's fama-related data
-data_fama <- read_csv("chars_data.csv") %>%
-  select(PERMNO, gvkey, sorting_year, BM, size)
+# # read vincent's fama-related data
+# data_fama <- read_csv("chars_data.csv") %>%
+#   select(PERMNO, gvkey, sorting_year, BM, size)
 
 data_mktcap <- read_csv("mktcap_monthly.csv") %>%
   select(PERMNO, year, month, mktcap)
 
 # merge liquidity and fama-related variables
 data_merged <- data %>%
-  inner_join(data_fama, by = c("PERMNO","sorting_year")) %>%
+  # inner_join(data_fama, by = c("PERMNO","sorting_year")) %>%
   inner_join(data_mktcap, by = c("PERMNO","year", "month")) %>%
   drop_na()
 
 # remove unnecessary data to save memories
-rm(data, data_fama, data_mktcap)
+rm(data, data_mktcap)
 
 # # compute the breakpoints of BM
 # BM_breakpoints <- data_merged %>%
@@ -130,7 +131,7 @@ data_merged <- data_merged %>%
 
 # pick the needed "type" variables
 data_typed <- data_merged %>%
-  select(date, PERMNO,RET, size, mktcap, roll_vol_type, ILLIQ_type) %>%
+  select(date, PERMNO,RET, mktcap, roll_vol_type, ILLIQ_type) %>%
   group_by(PERMNO) %>%
   mutate(weight = lag(mktcap))
 
@@ -171,11 +172,11 @@ weighted_mean = function(x, w, ..., na.rm = F){
 #   )
 
 # valuate roll_vol return
-portf_3_vol <- data_typed %>% 
+portf_vol <- data_typed %>% 
   group_by(date,roll_vol_type) %>% 
   summarise(vwret = weighted_mean(100 * RET,w = weight, na.rm = T))
 
-portf_3_vol <- portf_3_vol %>% 
+portf_vol <- portf_vol %>% 
   pivot_wider(
     id_cols = date,
     values_from= vwret,
@@ -184,11 +185,11 @@ portf_3_vol <- portf_3_vol %>%
   )
 
 # valuate ILLIQ return
-portf_3_ILLIQ <- data_typed %>% 
+portf_ILLIQ <- data_typed %>% 
   group_by(date,ILLIQ_type) %>% 
   summarise(vwret = weighted_mean(100 * RET,w = weight, na.rm = T))
 
-portf_3_ILLIQ <- portf_3_ILLIQ %>% 
+portf_ILLIQ <- portf_ILLIQ %>% 
   pivot_wider(
     id_cols = date,
     values_from= vwret,
@@ -196,9 +197,46 @@ portf_3_ILLIQ <- portf_3_ILLIQ %>%
     names_sep = ""
   )
 
+# read and merge market returns data
+portf <- read_csv("market_return.csv") %>%
+  mutate(SP_500 = SP_500 / 100, Mkt_RF = Mkt_RF / 100) %>%
+  left_join(portf_ILLIQ, by = "date") %>%
+  left_join(portf_vol, by = "date")
+
+# calculate cumulative returns
+portf_cum <- portf %>%
+  mutate(
+    SP_500_cum = cumprod(1 + SP_500) - 1,
+    Mkt_RF_cum = cumprod(1 + Mkt_RF) - 1, 
+    ILLIQ_1_cum = cumprod(1 + ILLIQ_1) - 1,
+    ILLIQ_2_cum = cumprod(1 + ILLIQ_2) - 1,
+    ILLIQ_3_cum = cumprod(1 + ILLIQ_3) - 1,
+    ILLIQ_4_cum = cumprod(1 + ILLIQ_4) - 1,
+    ILLIQ_5_cum = cumprod(1 + ILLIQ_5) - 1,
+    vol_1_cum = cumprod(1 + vol_1) - 1,
+    vol_2_cum = cumprod(1 + vol_2) - 1,
+    vol_3_cum = cumprod(1 + vol_3) - 1,
+    vol_4_cum = cumprod(1 + vol_4) - 1,
+    vol_5_cum = cumprod(1 + vol_5) - 1,
+  ) %>%
+  select(
+    date,
+    SP_500_cum,
+    Mkt_RF_cum,
+    ILLIQ_1_cum,
+    ILLIQ_2_cum,
+    ILLIQ_3_cum,
+    ILLIQ_4_cum,
+    ILLIQ_5_cum,
+    vol_1_cum,
+    vol_2_cum,
+    vol_3_cum,
+    vol_4_cum,
+    vol_5_cum,
+  )
 
 # long low vol
-vol_data_long <- portf_3_vol %>% 
+vol_data_long <- portf_vol %>% 
   mutate(
     vol_return = vol_1
   ) %>% 
@@ -206,8 +244,8 @@ vol_data_long <- portf_3_vol %>%
 
 
 # long low ILLIQ
-ILLIQ_data_long <- portf_3_ILLIQ %>%
+ILLIQ_data_long <- portf_ILLIQ %>%
   mutate(
-    ILLIQ_return = ILLIQ_1
+    ILLIQ_return = ILLIQ_5
   ) %>%
   select(date, ILLIQ_return)
