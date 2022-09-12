@@ -9,6 +9,7 @@ portf_cum %>%
   geom_line(aes(y = ILLIQ_3_cum, color = "ILLIQ_3_cum")) +
   geom_line(aes(y = ILLIQ_4_cum, color = "ILLIQ_4_cum")) +
   geom_line(aes(y = ILLIQ_5_cum, color = "ILLIQ_5_cum")) +
+  labs(y = "cumulative returns") +
   scale_y_continuous(labels = scales::percent)
 
 portf_cum %>%
@@ -20,4 +21,5 @@ portf_cum %>%
   geom_line(aes(y = vol_3_cum, color = "vol_3_cum")) +
   geom_line(aes(y = vol_4_cum, color = "vol_4_cum")) +
   geom_line(aes(y = vol_5_cum, color = "vol_5_cum")) +
+  labs(y = "cumulative returns") +
   scale_y_continuous(labels = scales::percent)
