@@ -8,7 +8,8 @@ portf_cum %>%
   geom_line(aes(y = ILLIQ_2_cum, color = "ILLIQ_2_cum")) +
   geom_line(aes(y = ILLIQ_3_cum, color = "ILLIQ_3_cum")) +
   geom_line(aes(y = ILLIQ_4_cum, color = "ILLIQ_4_cum")) +
-  geom_line(aes(y = ILLIQ_5_cum, color = "ILLIQ_5_cum"))
+  geom_line(aes(y = ILLIQ_5_cum, color = "ILLIQ_5_cum")) +
+  scale_y_continuous(labels = scales::percent)
 
 portf_cum %>%
   ggplot(aes(x = date)) +
@@ -18,4 +19,5 @@ portf_cum %>%
   geom_line(aes(y = vol_2_cum, color = "vol_2_cum")) +
   geom_line(aes(y = vol_3_cum, color = "vol_3_cum")) +
   geom_line(aes(y = vol_4_cum, color = "vol_4_cum")) +
-  geom_line(aes(y = vol_5_cum, color = "vol_5_cum"))
+  geom_line(aes(y = vol_5_cum, color = "vol_5_cum")) +
+  scale_y_continuous(labels = scales::percent)
