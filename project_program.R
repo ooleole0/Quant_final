@@ -52,39 +52,41 @@ data_merged <- data %>%
 # remove unnecessary data to save memories
 rm(data, data_fama, data_mktcap)
 
-# compute the breakpoints of BM
-BM_breakpoints <- data_merged %>%
-  group_by(sorting_year) %>%
-  summarise(
-    BM_q30 = quantile(BM, 0.3, na.rm = TRUE),
-    BM_q70 = quantile(BM, 0.7, na.rm = TRUE)
-  )
-data_merged <- data_merged %>%
-  inner_join(BM_breakpoints, by = "sorting_year")
+# # compute the breakpoints of BM
+# BM_breakpoints <- data_merged %>%
+#   group_by(sorting_year) %>%
+#   summarise(
+#     BM_q30 = quantile(BM, 0.3, na.rm = TRUE),
+#     BM_q70 = quantile(BM, 0.7, na.rm = TRUE)
+#   )
+# data_merged <- data_merged %>%
+#   inner_join(BM_breakpoints, by = "sorting_year")
 
-# compute the breakpoints of size
-size_breakpoints <- data_merged %>% 
-  group_by(sorting_year) %>%
-  summarise(
-    size_median = quantile(size, 0.5, na.rm = TRUE),
-  )
-data_merged <- data_merged %>%
-  inner_join(size_breakpoints,by = "sorting_year")
+# # compute the breakpoints of size
+# size_breakpoints <- data_merged %>% 
+#   group_by(sorting_year) %>%
+#   summarise(
+#     size_median = quantile(size, 0.5, na.rm = TRUE),
+#   )
+# data_merged <- data_merged %>%
+#   inner_join(size_breakpoints,by = "sorting_year")
 
-# flag BM and size
-data_merged <- data_merged %>%
-  mutate(BM_type = case_when(BM <= BM_q30 ~ 'L',
-                             BM > BM_q30 & BM < BM_q70 ~ 'N',
-                             BM >= BM_q70 ~ 'H'),
-         Size_type = case_when(size>= size_median ~ 'B',
-                               size< size_median ~ 'S')
-  )
+# # flag BM and size
+# data_merged <- data_merged %>%
+#   mutate(BM_type = case_when(BM <= BM_q30 ~ 'L',
+#                              BM > BM_q30 & BM < BM_q70 ~ 'N',
+#                              BM >= BM_q70 ~ 'H'),
+#          Size_type = case_when(size>= size_median ~ 'B',
+#                                size< size_median ~ 'S')
+#   )
 
 # compute the breakpoints of rolling volume
 roll_vol_breakpoints <- data_merged %>%
   group_by(sorting_year) %>%
   summarise(
     roll_vol_q20 = quantile(roll_vol, 0.2, na.rm = TRUE),
+    roll_vol_q40 = quantile(roll_vol, 0.4, na.rm = TRUE),
+    roll_vol_q60 = quantile(roll_vol, 0.6, na.rm = TRUE),
     roll_vol_q80 = quantile(roll_vol, 0.8, na.rm = TRUE)
   )
 data_merged <- data_merged %>%
@@ -92,10 +94,14 @@ data_merged <- data_merged %>%
 
 # flag rolling volume
 data_merged <- data_merged %>%
-  mutate(roll_vol_type = case_when(roll_vol <= roll_vol_q20 ~ 'L',
+  mutate(roll_vol_type = case_when(roll_vol <= roll_vol_q20 ~ 'vol_1',
                                    roll_vol > roll_vol_q20 &
-                                     roll_vol < roll_vol_q80 ~ 'N',
-                                   roll_vol >= roll_vol_q80 ~ 'H')
+                                     roll_vol <= roll_vol_q40 ~ 'vol_2',
+                                   roll_vol > roll_vol_q40 &
+                                     roll_vol <= roll_vol_q60 ~ 'vol_3',
+                                   roll_vol > roll_vol_q60 &
+                                     roll_vol <= roll_vol_q80 ~ 'vol_4',
+                                   roll_vol > roll_vol_q80 ~ 'vol_5')
   )
 
 # compute the breakpoints of ILLIQ
@@ -103,6 +109,8 @@ ILLIQ_breakpoints <- data_merged %>%
   group_by(sorting_year) %>%
   summarise(
     ILLIQ_q20 = quantile(ILLIQ, 0.2, na.rm = TRUE),
+    ILLIQ_q40 = quantile(ILLIQ, 0.4, na.rm = TRUE),
+    ILLIQ_q60 = quantile(ILLIQ, 0.6, na.rm = TRUE),
     ILLIQ_q80 = quantile(ILLIQ, 0.8, na.rm = TRUE)
   )
 data_merged <- data_merged %>%
@@ -110,14 +118,19 @@ data_merged <- data_merged %>%
 
 # flag ILLIQ
 data_merged <- data_merged %>%
-  mutate(ILLIQ_type = case_when(ILLIQ <= ILLIQ_q20 ~ 'L',
-                                ILLIQ > ILLIQ_q20 & ILLIQ < ILLIQ_q80 ~ 'N',
-                                ILLIQ >= ILLIQ_q80 ~ 'H')
+  mutate(ILLIQ_type = case_when(ILLIQ <= ILLIQ_q20 ~ 'ILLIQ_1',
+                                ILLIQ > ILLIQ_q20 &
+                                  ILLIQ <= ILLIQ_q40 ~ 'ILLIQ_2',
+                                ILLIQ > ILLIQ_q40 &
+                                  ILLIQ <= ILLIQ_q60 ~ 'ILLIQ_3',
+                                ILLIQ > ILLIQ_q60 &
+                                  ILLIQ <= ILLIQ_q80 ~ 'ILLIQ_4',
+                                ILLIQ > ILLIQ_q80 ~ 'ILLIQ_5')
   )
 
 # pick the needed "type" variables
 data_typed <- data_merged %>%
-  select(date, PERMNO,RET, size, mktcap, BM_type, Size_type, roll_vol_type, ILLIQ_type) %>%
+  select(date, PERMNO,RET, size, mktcap, roll_vol_type, ILLIQ_type) %>%
   group_by(PERMNO) %>%
   mutate(weight = lag(mktcap))
 
@@ -187,7 +200,7 @@ portf_3_ILLIQ <- portf_3_ILLIQ %>%
 # long low vol
 vol_data_long <- portf_3_vol %>% 
   mutate(
-    vol_return = L
+    vol_return = vol_1
   ) %>% 
   select(date,vol_return)
 
@@ -195,6 +208,6 @@ vol_data_long <- portf_3_vol %>%
 # long low ILLIQ
 ILLIQ_data_long <- portf_3_ILLIQ %>%
   mutate(
-    ILLIQ_return = L
+    ILLIQ_return = ILLIQ_1
   ) %>%
   select(date, ILLIQ_return)
