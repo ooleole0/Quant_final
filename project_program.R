@@ -122,7 +122,7 @@ data_typed <- data_merged %>%
   mutate(weight = lag(mktcap))
 
 # construct new weighted mean function since weighted.mean doesn't handle NA weights
-weighted_mean = function(x, w, ..., na.rm=F){
+weighted_mean = function(x, w, ..., na.rm = F){
   if(na.rm){
     keep = !is.na(x)&!is.na(w)
     w = w[keep]
@@ -131,31 +131,31 @@ weighted_mean = function(x, w, ..., na.rm=F){
   weighted.mean(x, w, ..., na.rm=F)
 }
 
-# valuate fama and roll_vol return
-portf_3x2x3_vol <- data_typed %>% 
-  group_by(date,BM_type,Size_type, roll_vol_type) %>% 
-  summarise(vwret = weighted_mean(100 * RET, w = weight,na.rm = T))
-
-portf_3x2x3_vol <- portf_3x2x3_vol %>% 
-  pivot_wider(
-    id_cols = date,
-    values_from= vwret,
-    names_from = c(BM_type,Size_type, roll_vol_type),
-    names_sep = ""
-  )
-
-# valuate fama and ILLIQ return
-portf_3x2x3_ILLIQ <- data_typed %>% 
-  group_by(date,BM_type,Size_type, ILLIQ_type) %>% 
-  summarise(vwret = weighted_mean(100 * RET, w = weight, na.rm = T))
-
-portf_3x2x3_ILLIQ <- portf_3x2x3_ILLIQ %>% 
-  pivot_wider(
-    id_cols = date,
-    values_from= vwret,
-    names_from = c(BM_type,Size_type, ILLIQ_type),
-    names_sep = ""
-  )
+# # valuate fama and roll_vol return
+# portf_3x2x3_vol <- data_typed %>% 
+#   group_by(date,BM_type,Size_type, roll_vol_type) %>% 
+#   summarise(vwret = weighted_mean(100 * RET, w = weight,na.rm = T))
+# 
+# portf_3x2x3_vol <- portf_3x2x3_vol %>% 
+#   pivot_wider(
+#     id_cols = date,
+#     values_from= vwret,
+#     names_from = c(BM_type,Size_type, roll_vol_type),
+#     names_sep = ""
+#   )
+# 
+# # valuate fama and ILLIQ return
+# portf_3x2x3_ILLIQ <- data_typed %>%
+#   group_by(date,BM_type,Size_type, ILLIQ_type) %>%
+#   summarise(vwret = weighted_mean(100 * RET, w = weight, na.rm = T))
+# 
+# portf_3x2x3_ILLIQ <- portf_3x2x3_ILLIQ %>%
+#   pivot_wider(
+#     id_cols = date,
+#     values_from= vwret,
+#     names_from = c(BM_type,Size_type, ILLIQ_type),
+#     names_sep = ""
+#   )
 
 # valuate roll_vol return
 portf_3_vol <- data_typed %>% 
