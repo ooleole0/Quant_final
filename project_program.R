@@ -143,7 +143,7 @@ weighted_mean = function(x, w, ..., na.rm = F){
     w = w[keep]
     x = x[keep]
   }
-  weighted.mean(x, w, ..., na.rm=F)
+  weighted.mean(x, w, ..., na.rm = F)
 }
 
 # # valuate fama and roll_vol return
@@ -180,7 +180,7 @@ portf_vol <- data_typed %>%
 portf_vol <- portf_vol %>% 
   pivot_wider(
     id_cols = date,
-    values_from= vwret,
+    values_from = vwret,
     names_from = c(roll_vol_type),
     names_sep = ""
   )
@@ -193,7 +193,7 @@ portf_ILLIQ <- data_typed %>%
 portf_ILLIQ <- portf_ILLIQ %>% 
   pivot_wider(
     id_cols = date,
-    values_from= vwret,
+    values_from = vwret,
     names_from = c(ILLIQ_type),
     names_sep = ""
   )
@@ -218,7 +218,7 @@ portf_cum <- portf %>%
     vol_2_cum = cumprod(1 + vol_2) - 1,
     vol_3_cum = cumprod(1 + vol_3) - 1,
     vol_4_cum = cumprod(1 + vol_4) - 1,
-    vol_5_cum = cumprod(1 + vol_5) - 1,
+    vol_5_cum = cumprod(1 + vol_5) - 1
   ) %>%
   select(date, SP_500_cum:vol_5_cum)
 
