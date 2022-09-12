@@ -135,7 +135,8 @@ data_typed <- data_merged %>%
   group_by(PERMNO) %>%
   mutate(weight = lag(mktcap))
 
-# construct new weighted mean function since weighted.mean doesn't handle NA weights
+# construct new weighted mean function since weighted.mean doesn't handle 
+# NA weights
 weighted_mean = function(x, w, ..., na.rm = F){
   if(na.rm){
     keep = !is.na(x)&!is.na(w)
@@ -219,21 +220,7 @@ portf_cum <- portf %>%
     vol_4_cum = cumprod(1 + vol_4) - 1,
     vol_5_cum = cumprod(1 + vol_5) - 1,
   ) %>%
-  select(
-    date,
-    SP_500_cum,
-    Mkt_RF_cum,
-    ILLIQ_1_cum,
-    ILLIQ_2_cum,
-    ILLIQ_3_cum,
-    ILLIQ_4_cum,
-    ILLIQ_5_cum,
-    vol_1_cum,
-    vol_2_cum,
-    vol_3_cum,
-    vol_4_cum,
-    vol_5_cum,
-  )
+  select(date, SP_500_cum:vol_5_cum)
 
 # long low vol
 vol_data_long <- portf_vol %>% 
