@@ -17,6 +17,7 @@ data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
     ILLIQ = abs(RET) / VOL * PRC
     ) %>%
   # group by PERMNO then calculate last 12 months rolling avg trading volumes
+  # and rolling standard deviation
   group_by(PERMNO) %>%
   mutate(
     roll_vol = rollmean(VOL, k =12, na.pad=TRUE, align="right"),
