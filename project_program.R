@@ -17,6 +17,7 @@ data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
     VOLD = VOL * PRC,
     ILLIQ = abs(RET) / VOLD
     ) %>%
+  arrange(PERMNO, date) %>%
   # group by PERMNO then calculate last 12 months rolling avg trading volumes
   group_by(PERMNO) %>%
   mutate(roll_vol = rollmean(VOL, k =12, na.pad=TRUE, align="right")) %>%
