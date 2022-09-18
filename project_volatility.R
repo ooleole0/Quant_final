@@ -127,6 +127,10 @@ alphas <- CAPM.alpha(sd_xts, mkt_xts, RF_xts)
 betas <- CAPM.beta(sd_xts, mkt_xts, RF_xts)
 
 
+# alternate way to valuate alpha and beta
+summary(lm(portf[, 6] - portf[, 3] ~ portf[, 5] - portf[, 3]))
+
+
 # make plots
 portf_cum %>%
   ggplot(aes(x = date)) +
