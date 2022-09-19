@@ -42,39 +42,24 @@ rm(data)
 sd_breakpoints <- data_merged %>%
   group_by(date) %>%
   summarise(
-    sd_q10 = quantile(roll_sd, 0.1, na.rm = TRUE),
     sd_q20 = quantile(roll_sd, 0.2, na.rm = TRUE),
-    sd_q30 = quantile(roll_sd, 0.3, na.rm = TRUE),
     sd_q40 = quantile(roll_sd, 0.4, na.rm = TRUE),
-    sd_q50 = quantile(roll_sd, 0.5, na.rm = TRUE),
     sd_q60 = quantile(roll_sd, 0.6, na.rm = TRUE),
-    sd_q70 = quantile(roll_sd, 0.7, na.rm = TRUE),
     sd_q80 = quantile(roll_sd, 0.8, na.rm = TRUE),
-    sd_q90 = quantile(roll_sd, 0.9, na.rm = TRUE),
   )
 data_merged <- data_merged %>%
   inner_join(sd_breakpoints, by = "date")
 
 # flag roll_sd
 data_merged <- data_merged %>%
-  mutate(sd_type = case_when(roll_sd <= sd_q10 ~ 'sd_1',
-                             roll_sd > sd_q10 &
-                               roll_sd <= sd_q20 ~ 'sd_2',
+  mutate(sd_type = case_when(roll_sd <= sd_q20 ~ 'sd_1',
                              roll_sd > sd_q20 &
-                               roll_sd <= sd_q30 ~ 'sd_3',
-                             roll_sd > sd_q30 &
-                               roll_sd <= sd_q40 ~ 'sd_4',
+                               roll_sd <= sd_q40 ~ 'sd_2',
                              roll_sd > sd_q40 &
-                               roll_sd <= sd_q50 ~ 'sd_5',
-                             roll_sd > sd_q50 &
-                               roll_sd <= sd_q60 ~ 'sd_6',
+                               roll_sd <= sd_q60 ~ 'sd_3',
                              roll_sd > sd_q60 &
-                               roll_sd <= sd_q70 ~ 'sd_7',
-                             roll_sd > sd_q70 &
-                               roll_sd <= sd_q80 ~ 'sd_8',
-                             roll_sd > sd_q80 &
-                               roll_sd <= sd_q90 ~ 'sd_9',
-                             roll_sd > sd_q90 ~ 'sd_10')
+                               roll_sd <= sd_q80 ~ 'sd_4',
+                             roll_sd > sd_q80 ~ 'sd_5')
   )
 
 # pick the needed "type" variables
@@ -128,14 +113,9 @@ portf_cum <- portf %>%
     sd_2_cum = cumprod(1 + sd_2) - 1,
     sd_3_cum = cumprod(1 + sd_3) - 1,
     sd_4_cum = cumprod(1 + sd_4) - 1,
-    sd_5_cum = cumprod(1 + sd_5) - 1,
-    sd_6_cum = cumprod(1 + sd_6) - 1,
-    sd_7_cum = cumprod(1 + sd_7) - 1,
-    sd_8_cum = cumprod(1 + sd_8) - 1,
-    sd_9_cum = cumprod(1 + sd_9) - 1,
-    sd_10_cum = cumprod(1 + sd_10) - 1
+    sd_5_cum = cumprod(1 + sd_5) - 1
   ) %>%
-  select(date, Mkt_cum:sd_10_cum)
+  select(date, Mkt_cum:sd_5_cum)
 
 
 # make plots
@@ -148,19 +128,18 @@ portf_cum %>%
   geom_line(aes(y = sd_3_cum, color = "sd_3_cum")) +
   geom_line(aes(y = sd_4_cum, color = "sd_4_cum")) +
   geom_line(aes(y = sd_5_cum, color = "sd_5_cum")) +
-  geom_line(aes(y = sd_6_cum, color = "sd_6_cum")) +
-  geom_line(aes(y = sd_7_cum, color = "sd_7_cum")) +
-  geom_line(aes(y = sd_8_cum, color = "sd_8_cum")) +
-  geom_line(aes(y = sd_9_cum, color = "sd_9_cum")) +
-  geom_line(aes(y = sd_10_cum, color = "sd_10_cum")) +
   labs(y = "cumulative returns") +
   scale_y_continuous(labels = scales::percent)
 
 # valuate alpha and beta
-ret_mat <- portf[, 6:15] - portf$RF
+ret_mat <- portf[, 6:10] - portf$RF
 Mkt_RF_mat <- portf$Mkt - portf$RF
 GRS_result <- GRS.test(ret_mat, Mkt_RF_mat)
-capm_fit <- lm(sd_1 - RF ~ Mkt - RF, portf)
+
+# regression by groups
+sd_m_RF <- portf$sd_1 - portf$RF
+Mkt_m_RF <- portf$Mkt - portf$RF
+capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
 summary(capm_fit)
 
 # # alternate way to valuate alphas and betas
