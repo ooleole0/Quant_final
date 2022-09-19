@@ -15,6 +15,8 @@ data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
     ASKHI = abs(ASKHI),
     PRC = abs(PRC),
     mktcap = abs(PRC) * SHROUT,
+    # Amihud ILLIQ
+    ILLIQ = abs(RET) / VOL * PRC
   ) %>%
   arrange(PERMNO, date) %>%
   # group by PERMNO then calculate last 12 months trailing standard deviation
@@ -32,7 +34,7 @@ data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
 
 # select the needed variables
 data_merged <- data %>%
-  select(date, year, month, PERMNO, PRC, RET, mktcap, roll_sd) %>%
+  select(date, year, month, PERMNO, PRC, RET, mktcap, roll_sd, ILLIQ) %>%
   drop_na()
 
 # remove unnecessary data to save memories
@@ -62,9 +64,33 @@ data_merged <- data_merged %>%
                              roll_sd > sd_q80 ~ 'sd_5')
   )
 
+# compute the breakpoints of ILLIQ
+ILLIQ_breakpoints <- data_merged %>%
+  group_by(date) %>%
+  summarise(
+    ILLIQ_q20 = quantile(ILLIQ, 0.2, na.rm = TRUE),
+    ILLIQ_q40 = quantile(ILLIQ, 0.4, na.rm = TRUE),
+    ILLIQ_q60 = quantile(ILLIQ, 0.6, na.rm = TRUE),
+    ILLIQ_q80 = quantile(ILLIQ, 0.8, na.rm = TRUE)
+  )
+data_merged <- data_merged %>%
+  inner_join(ILLIQ_breakpoints, by = "date")
+
+# flag ILLIQ
+data_merged <- data_merged %>%
+  mutate(ILLIQ_type = case_when(ILLIQ <= ILLIQ_q20 ~ 'ILLIQ_1',
+                                ILLIQ > ILLIQ_q20 &
+                                  ILLIQ <= ILLIQ_q40 ~ 'ILLIQ_2',
+                                ILLIQ > ILLIQ_q40 &
+                                  ILLIQ <= ILLIQ_q60 ~ 'ILLIQ_3',
+                                ILLIQ > ILLIQ_q60 &
+                                  ILLIQ <= ILLIQ_q80 ~ 'ILLIQ_4',
+                                ILLIQ > ILLIQ_q80 ~ 'ILLIQ_5')
+  )
+
 # pick the needed "type" variables
 data_typed <- data_merged %>%
-  select(date, PERMNO,RET, mktcap, sd_type) %>%
+  select(date, PERMNO,RET, mktcap, sd_type, ILLIQ_type) %>%
   group_by(PERMNO) %>%
   mutate(weight = lag(mktcap))
 
@@ -92,6 +118,19 @@ portf_sd <- portf_sd %>%
     names_sep = ""
   )
 
+# valuate ILLIQ return
+portf_ILLIQ <- data_typed %>% 
+  group_by(date,ILLIQ_type) %>% 
+  summarise(vwret = weighted_mean(RET,w = weight, na.rm = T))
+
+portf_ILLIQ <- portf_ILLIQ %>% 
+  pivot_wider(
+    id_cols = date,
+    values_from = vwret,
+    names_from = c(ILLIQ_type),
+    names_sep = ""
+  )
+
 # read and merge market returns data
 portf <- read_csv("mkt.csv") %>%
   mutate(
@@ -100,6 +139,7 @@ portf <- read_csv("mkt.csv") %>%
     RF = as.numeric(RF) / 100
   ) %>%
   inner_join(portf_sd, by = "date") %>%
+  inner_join(portf_ILLIQ, by = "date") %>%
   arrange(date) %>%
   select(-Date, -Mkt_RF) %>%
   drop_na()
@@ -141,13 +181,3 @@ sd_m_RF <- portf$sd_1 - portf$RF
 Mkt_m_RF <- portf$Mkt - portf$RF
 capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
 summary(capm_fit)
-
-# # alternate way to valuate alphas and betas
-# # transform portf into xts format so that CAPM function could operate
-# portf <- as.data.frame(portf)
-# mkt_xts <- xts(portf[, 5], order.by = portf[, 4])
-# RF_xts <- xts(portf[, 3], order.by = portf[, 4])
-# sd_xts <- xts(portf[, 6:15], order.by = portf[, 4])
-# 
-# alphas <- CAPM.alpha(sd_xts, mkt_xts, RF_xts)
-# betas <- CAPM.beta(sd_xts, mkt_xts, RF_xts)
