@@ -194,15 +194,28 @@ ILLIQ_type_cnt <- data_merged %>%
     names_sep = ""
   )
 
-# explore market capital distribution per sd_type
-mktcap_sd_type <- data_merged %>%
-  group_by(PERMNO) %>%
+mktcap_trend <- data_merged %>%
+  group_by(date, sd_type) %>%
   mutate(
     mktcap_mean = mean(mktcap)
   ) %>%
   ungroup() %>%
-  select(PERMNO, sd_type, mktcap_mean) %>%
-  distinct()
+  select(date, sd_type, mktcap_mean) %>%
+  distinct() %>%
+  arrange(date, sd_type)
 
-ggplot(mktcap_sd_type, aes(x = sd_type, y = mktcap_mean)) +
-  geom_boxplot()
+ggplot(mktcap_trend, aes(x = date, y = mktcap_mean, color = sd_type)) +
+  geom_line()
+
+# # explore market capital distribution per sd_type
+# mktcap_sd_type <- data_merged %>%
+#   group_by(PERMNO) %>%
+#   mutate(
+#     mktcap_mean = mean(mktcap)
+#   ) %>%
+#   ungroup() %>%
+#   select(PERMNO, sd_type, mktcap_mean) %>%
+#   distinct()
+# 
+# ggplot(mktcap_sd_type, aes(x = sd_type, y = mktcap_mean)) +
+#   geom_boxplot()
