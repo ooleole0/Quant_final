@@ -193,3 +193,16 @@ ILLIQ_type_cnt <- data_merged %>%
     names_from = ILLIQ_type,
     names_sep = ""
   )
+
+# explore market capital distribution per sd_type
+mktcap_sd_type <- data_merged %>%
+  group_by(PERMNO) %>%
+  mutate(
+    mktcap_mean = mean(mktcap)
+  ) %>%
+  ungroup() %>%
+  select(PERMNO, sd_type, mktcap_mean) %>%
+  distinct()
+
+ggplot(mktcap_sd_type, aes(x = sd_type, y = mktcap_mean)) +
+  geom_boxplot()
