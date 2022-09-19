@@ -178,7 +178,7 @@ Mkt_RF_mat <- portf$Mkt - portf$RF
 GRS_result <- GRS.test(ret_mat, Mkt_RF_mat)
 
 # regression by groups
-sd_m_RF <- portf$sd_5 - portf$RF
+sd_m_RF <- portf$sd_1 - portf$RF
 Mkt_m_RF <- portf$Mkt - portf$RF
 capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
 coeftest(capm_fit,vcov=NeweyWest)
