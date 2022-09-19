@@ -4,6 +4,7 @@ library(PerformanceAnalytics)
 library(ggplot2)
 library(GRS.test)
 library(lmtest)
+library(sandwich)
 
 # read the project data as a tibble
 data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
@@ -181,7 +182,7 @@ GRS_result <- GRS.test(ret_mat, Mkt_RF_mat)
 sd_m_RF <- portf$sd_1 - portf$RF
 Mkt_m_RF <- portf$Mkt - portf$RF
 capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
-coeftest(capm_fit,vcov=NeweyWest)
+coeftest(capm_fit, vcov = NeweyWest)
 
 # count ILLIQ type by volatility group
 ILLIQ_type_cnt <- data_merged %>% 
