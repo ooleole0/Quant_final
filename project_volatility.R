@@ -3,6 +3,7 @@ library(lubridate)
 library(PerformanceAnalytics)
 library(ggplot2)
 library(GRS.test)
+library(lmtest)
 
 # read the project data as a tibble
 data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
@@ -177,7 +178,18 @@ Mkt_RF_mat <- portf$Mkt - portf$RF
 GRS_result <- GRS.test(ret_mat, Mkt_RF_mat)
 
 # regression by groups
-sd_m_RF <- portf$sd_1 - portf$RF
+sd_m_RF <- portf$sd_5 - portf$RF
 Mkt_m_RF <- portf$Mkt - portf$RF
 capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
-summary(capm_fit)
+coeftest(capm_fit,vcov=NeweyWest)
+
+# count ILLIQ type by volatility group
+ILLIQ_type_cnt <- data_merged %>% 
+  group_by(sd_type) %>%
+  count(ILLIQ_type) %>%
+  pivot_wider(
+    id_cols = sd_type,
+    values_from = n,
+    names_from = ILLIQ_type,
+    names_sep = ""
+  )
