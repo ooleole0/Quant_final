@@ -181,3 +181,14 @@ sd_m_RF <- portf$sd_1 - portf$RF
 Mkt_m_RF <- portf$Mkt - portf$RF
 capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
 summary(capm_fit)
+
+# count ILLIQ type by volatility group
+ILLIQ_type_cnt <- data_merged %>% 
+  group_by(sd_type) %>%
+  count(ILLIQ_type) %>%
+  pivot_wider(
+    id_cols = sd_type,
+    values_from = n,
+    names_from = ILLIQ_type,
+    names_sep = ""
+  )
