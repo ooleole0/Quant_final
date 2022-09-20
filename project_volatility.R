@@ -18,6 +18,7 @@ data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
     PRC = abs(PRC),
     mktcap = abs(PRC) * SHROUT,
     # Amihud ILLIQ
+    # ILLIQ would be inf if VOL = 0
     ILLIQ = abs(RET) / VOL * PRC
   ) %>%
   arrange(PERMNO, date) %>%
@@ -90,9 +91,27 @@ data_merged <- data_merged %>%
                                 ILLIQ > ILLIQ_q80 ~ 'ILLIQ_5')
   )
 
+# compute the median of size
+mktcap_breakpoints <- data_merged %>%
+  group_by(date) %>%
+  summarise(
+    mktcap_median = quantile(mktcap, 0.5, na.rm = TRUE)
+  )
+data_merged <- data_merged %>%
+  inner_join(mktcap_breakpoints, by = "date")
+
+# flag size
+data_merged <- data_merged %>%
+  mutate(
+    mktcap_type = case_when(
+      mktcap >= mktcap_median ~ 'B',
+      mktcap < mktcap_median ~ 'S'
+    )
+  )
+
 # pick the needed "type" variables
 data_typed <- data_merged %>%
-  select(date, PERMNO,RET, mktcap, sd_type, ILLIQ_type) %>%
+  select(date, PERMNO,RET, mktcap, sd_type, ILLIQ_type, mktcap_type) %>%
   group_by(PERMNO) %>%
   mutate(weight = lag(mktcap))
 
@@ -184,29 +203,40 @@ Mkt_m_RF <- portf$Mkt - portf$RF
 capm_fit <- lm(sd_m_RF ~ Mkt_m_RF, portf)
 coeftest(capm_fit, vcov = NeweyWest)
 
-# count ILLIQ type by volatility group
-ILLIQ_type_cnt <- data_merged %>% 
+# count size type by volatility group
+mktcap_type_cnt <- data_merged %>%
   group_by(sd_type) %>%
-  count(ILLIQ_type) %>%
+  count(mktcap_type) %>%
   pivot_wider(
     id_cols = sd_type,
     values_from = n,
-    names_from = ILLIQ_type,
+    names_from = mktcap_type,
     names_sep = ""
   )
 
-mktcap_trend <- data_merged %>%
-  group_by(date, sd_type) %>%
-  mutate(
-    mktcap_mean = mean(mktcap)
-  ) %>%
-  ungroup() %>%
-  select(date, sd_type, mktcap_mean) %>%
-  distinct() %>%
-  arrange(date, sd_type)
-
-ggplot(mktcap_trend, aes(x = date, y = mktcap_mean, color = sd_type)) +
-  geom_line()
+# # count ILLIQ type by volatility group
+# ILLIQ_type_cnt <- data_merged %>% 
+#   group_by(sd_type) %>%
+#   count(ILLIQ_type) %>%
+#   pivot_wider(
+#     id_cols = sd_type,
+#     values_from = n,
+#     names_from = ILLIQ_type,
+#     names_sep = ""
+#   )
+# 
+# mktcap_trend <- data_merged %>%
+#   group_by(date, sd_type) %>%
+#   mutate(
+#     mktcap_mean = mean(mktcap)
+#   ) %>%
+#   ungroup() %>%
+#   select(date, sd_type, mktcap_mean) %>%
+#   distinct() %>%
+#   arrange(date, sd_type)
+# 
+# ggplot(mktcap_trend, aes(x = date, y = mktcap_mean, color = sd_type)) +
+#   geom_line()
 
 # # explore market capital distribution per sd_type
 # mktcap_sd_type <- data_merged %>%
