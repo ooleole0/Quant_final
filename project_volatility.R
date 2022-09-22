@@ -5,6 +5,7 @@ library(ggplot2)
 library(GRS.test)
 library(lmtest)
 library(sandwich)
+library(ggrepel)
 
 # read the project data as a tibble
 data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
@@ -155,14 +156,17 @@ portf_ILLIQ <- portf_ILLIQ %>%
 # read and merge market returns data
 portf <- read_csv("mkt.csv") %>%
   mutate(
+        Mkt = as.numeric(Mkt_RF) / 100 + as.numeric(RF) / 100,
+    Mkt_RF = Mkt_RF / 100,
+    SMB = SMB / 100,
+    HML = HML / 100,
     date = Date, 
-    Mkt = (as.numeric(Mkt_RF) + as.numeric(RF)) / 100,
     RF = as.numeric(RF) / 100
   ) %>%
   inner_join(portf_sd, by = "date") %>%
   inner_join(portf_ILLIQ, by = "date") %>%
   arrange(date) %>%
-  select(-Date, -Mkt_RF) %>%
+  select(-Date) %>%
   drop_na()
 
 # calculate cumulative returns
@@ -193,7 +197,7 @@ portf_cum %>%
   scale_y_continuous(labels = scales::percent)
 
 # valuate alpha and beta
-ret_mat <- portf[, 6:10] - portf$RF
+ret_mat <- portf[, 7:11] - portf$RF
 Mkt_RF_mat <- portf$Mkt - portf$RF
 GRS_result <- GRS.test(ret_mat, Mkt_RF_mat)
 
@@ -213,6 +217,33 @@ mktcap_type_cnt <- data_merged %>%
     names_from = mktcap_type,
     names_sep = ""
   )
+
+
+# draw regression plot
+Y <- as.matrix(portf[,7:11])
+x <- as.matrix(portf[,c("Mkt_RF","SMB","HML")])
+mx <- colMeans(x)
+rf <- as.matrix(portf[,"RF"])
+Act_Ret <- numeric(ncol(Y))
+Pred_Ret <- Act_Ret
+
+for(i in 1:ncol(Y)){
+  y <- Y[,i] - rf
+  mdl <- lm(y ~ x)
+  Pred_Ret[i] <- sum(mdl$coef[2:4]*mx)
+  Act_Ret[i] <- mean(y)
+}
+
+plot_df <- cbind.data.frame(colnames(Y), Pred_Ret, Act_Ret)
+
+ggplot(plot_df, aes(x = Pred_Ret, y = Act_Ret)) +
+  geom_point() +
+  stat_smooth(method = lm) +
+  geom_label_repel(aes(label = colnames(Y)), size = 3) +
+  xlab("Predicted mean of excess returns") +
+  ylab("Realized average excess returns") +
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent)
 
 # # count ILLIQ type by volatility group
 # ILLIQ_type_cnt <- data_merged %>% 
