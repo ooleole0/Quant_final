@@ -23,7 +23,7 @@ data <- read_csv("project_data.csv", na=c("","A","B","C")) %>%
     ILLIQ = abs(RET) / VOL * PRC
   ) %>%
   arrange(PERMNO, date) %>%
-  # group by PERMNO then calculate last 12 months trailing standard deviation
+  # group by PERMNO then calculate last 36 months trailing standard deviation
   group_by(PERMNO) %>%
   mutate(
     roll_sd = zoo::rollapply(RET, 36, sd, fill = NA)
@@ -183,7 +183,7 @@ portf_cum <- portf %>%
   select(date, Mkt_cum:sd_5_cum)
 
 
-# make plots
+# make cumulative returns plots
 portf_cum %>%
   ggplot(aes(x = date)) +
   geom_line(aes(y = Mkt_cum, color = "Mkt_cum")) +
