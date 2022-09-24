@@ -193,7 +193,7 @@ portf_cum %>%
   geom_line(aes(y = sd_3_cum, color = "sd_3_cum")) +
   geom_line(aes(y = sd_4_cum, color = "sd_4_cum")) +
   geom_line(aes(y = sd_5_cum, color = "sd_5_cum")) +
-  labs(y = "cumulative returns") +
+  labs(y = "Cumulative returns") +
   scale_y_continuous(labels = scales::percent)
 
 # valuate alpha and beta
