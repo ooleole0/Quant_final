@@ -256,15 +256,16 @@ portf <- portf %>%
     sd_LMH = sd_1 - sd_5
   )
 portf_sharpe <- portf %>%
-  select(sd_1:sd_5, sd_LMH, SMB:RF) %>%
+  select(sd_1:sd_5, sd_LMH, Mkt, SMB:RF) %>%
   xts(order.by = portf$date)
 
 # run GRS test again
 ret_mat_2 <- portf_sharpe[, 1:6] - portf$RF
 GRS_result_2 <- GRS.test(ret_mat_2, Mkt_RF_mat)
 
-# calculate sharpe ratio
-sharpe <- SharpeRatio(portf_sharpe[, 1:8], portf_sharpe$RF, FUN = "StdDev") %>%
+# calculate Sharpe ratio
+
+sharpe_annual <- SharpeRatio.annualized(portf_sharpe[, 1:9], portf_sharpe$RF) %>%
   as.data.frame() %>%
   pivot_longer(
     cols = sd_1:HML,
