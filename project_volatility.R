@@ -138,6 +138,10 @@ portf_sd <- portf_sd %>%
     values_from = vwret,
     names_from = c(sd_type),
     names_sep = ""
+  ) %>%
+  mutate(
+    year = year(date),
+    month = month(date)
   )
 
 # valuate ILLIQ return
@@ -151,23 +155,40 @@ portf_ILLIQ <- portf_ILLIQ %>%
     values_from = vwret,
     names_from = c(ILLIQ_type),
     names_sep = ""
+  ) %>%
+  mutate(
+    year = year(date),
+    month = month(date)
   )
 
 # read and merge market returns data
+
 portf <- read_csv("mkt.csv") %>%
   mutate(
-        Mkt = as.numeric(Mkt_RF) / 100 + as.numeric(RF) / 100,
+    year = year(Date),
+    month = month(Date),
+    Mkt = as.numeric(Mkt_RF) / 100 + as.numeric(RF) / 100,
     Mkt_RF = Mkt_RF / 100,
     SMB = SMB / 100,
     HML = HML / 100,
     date = Date, 
     RF = as.numeric(RF) / 100
   ) %>%
-  inner_join(portf_sd, by = "date") %>%
-  inner_join(portf_ILLIQ, by = "date") %>%
+  inner_join(portf_sd, by = c("year", "month")) %>%
+  inner_join(portf_ILLIQ, by = c("year", "month")) %>%
   arrange(date) %>%
-  select(-Date) %>%
-  drop_na()
+  select(-Date, -year, -month, -date.x, -date.y) %>%
+  drop_na() %>%
+  select(
+    date,
+    Mkt_RF,
+    SMB,
+    HML,
+    RF,
+    Mkt,
+    sd_1:sd_5,
+    ILLIQ_1:ILLIQ_5,
+  )
 
 
 # valuate alpha and beta
@@ -240,6 +261,13 @@ sharpe <- SharpeRatio(portf_sharpe[, 1:8], portf_sharpe$RF, FUN = "StdDev") %>%
     names_to = "portf_type",
     values_to = "sharpe_ratio"
   )
+
+# calculate information ratio
+portf_info <- portf %>%
+  select(sd_1:sd_5, sd_LMH,SMB, HML, Mkt) %>%
+  xts(order.by = portf$date)
+
+info <- InformationRatio(portf_info[, 1:8], portf_info[, 9])
 
 # # draw sharpe ratio scatter plot
 # sharpe %>%
