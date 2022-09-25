@@ -169,32 +169,6 @@ portf <- read_csv("mkt.csv") %>%
   select(-Date) %>%
   drop_na()
 
-# calculate cumulative returns
-portf_cum <- portf %>%
-  mutate(
-    Mkt_cum = cumprod(1 + Mkt) - 1,
-    RF_cum = cumprod(1 + RF) - 1,
-    sd_1_cum = cumprod(1 + sd_1) - 1,
-    sd_2_cum = cumprod(1 + sd_2) - 1,
-    sd_3_cum = cumprod(1 + sd_3) - 1,
-    sd_4_cum = cumprod(1 + sd_4) - 1,
-    sd_5_cum = cumprod(1 + sd_5) - 1
-  ) %>%
-  select(date, Mkt_cum:sd_5_cum)
-
-
-# make cumulative returns plots
-portf_cum %>%
-  ggplot(aes(x = date)) +
-  geom_line(aes(y = Mkt_cum, color = "Mkt_cum")) +
-  geom_line(aes(y = RF_cum, color = "RF_cum")) +
-  geom_line(aes(y = sd_1_cum, color = "sd_1_cum")) +
-  geom_line(aes(y = sd_2_cum, color = "sd_2_cum")) +
-  geom_line(aes(y = sd_3_cum, color = "sd_3_cum")) +
-  geom_line(aes(y = sd_4_cum, color = "sd_4_cum")) +
-  geom_line(aes(y = sd_5_cum, color = "sd_5_cum")) +
-  labs(y = "Cumulative returns") +
-  scale_y_continuous(labels = scales::percent)
 
 # valuate alpha and beta
 ret_mat <- portf[, 7:11] - portf$RF
@@ -244,6 +218,71 @@ ggplot(plot_df, aes(x = Pred_Ret, y = Act_Ret)) +
   ylab("Realized average excess returns") +
   scale_x_continuous(labels = scales::percent) +
   scale_y_continuous(labels = scales::percent)
+
+# make long-short portfolio
+portf <- portf %>%
+  mutate(
+    sd_LMH = sd_1 - sd_5
+  )
+portf_sharpe <- portf %>%
+  select(sd_1:sd_5, sd_LMH, SMB:RF) %>%
+  xts(order.by = portf$date)
+
+# run GRS test again
+ret_mat_2 <- portf_sharpe[, 1:6] - portf$RF
+GRS_result_2 <- GRS.test(ret_mat_2, Mkt_RF_mat)
+
+# calculate sharpe ratio
+sharpe <- SharpeRatio(portf_sharpe[, 1:8], portf_sharpe$RF, FUN = "StdDev") %>%
+  as.data.frame() %>%
+  pivot_longer(
+    cols = sd_1:HML,
+    names_to = "portf_type",
+    values_to = "sharpe_ratio"
+  )
+
+# # draw sharpe ratio scatter plot
+# sharpe %>%
+#   ggplot(aes(x = portf_type, y = sharpe_ratio)) +
+#   geom_point()
+
+# calculate cumulative returns
+portf_cum <- portf %>%
+  mutate(
+    Mkt_cum = cumprod(1 + Mkt) - 1,
+    RF_cum = cumprod(1 + RF) - 1,
+    sd_1_cum = cumprod(1 + sd_1) - 1,
+    sd_2_cum = cumprod(1 + sd_2) - 1,
+    sd_3_cum = cumprod(1 + sd_3) - 1,
+    sd_4_cum = cumprod(1 + sd_4) - 1,
+    sd_5_cum = cumprod(1 + sd_5) - 1,
+    sd_LMH_cum = cumprod(1 + sd_LMH) - 1,
+    SMB_cum = cumprod(1 + SMB) - 1,
+    HML_cum = cumprod(1 + HML) - 1
+  ) %>%
+  select(date, Mkt_cum:HML_cum)
+
+
+# make cumulative returns plots
+portf_cum_line <- portf_cum %>%
+  pivot_longer(
+    cols = c("Mkt_cum",
+             "RF_cum", 
+             "sd_1_cum", 
+             "sd_5_cum", 
+             "sd_LMH_cum", 
+             "SMB_cum",
+             "HML_cum"),
+    names_to = "portf_type",
+    values_to = "cum_ret"
+  )
+
+portf_cum_line %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = cum_ret, color = portf_type)) +
+  labs(y = "Cumulative returns") +
+  scale_y_continuous(labels = scales::percent)
+
 
 # # count ILLIQ type by volatility group
 # ILLIQ_type_cnt <- data_merged %>% 
