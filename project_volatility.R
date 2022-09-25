@@ -213,6 +213,16 @@ mktcap_type_cnt <- data_merged %>%
     names_sep = ""
   )
 
+# count ILLIQ type by volatility group
+ILLIQ_type_cnt <- data_merged %>%
+  group_by(sd_type) %>%
+  count(ILLIQ_type) %>%
+  pivot_wider(
+    id_cols = sd_type,
+    values_from = n,
+    names_from = ILLIQ_type,
+    names_sep = ""
+  )
 
 # draw regression plot
 Y <- as.matrix(portf[,7:11])
@@ -311,18 +321,6 @@ portf_cum_line %>%
   labs(y = "Cumulative returns") +
   scale_y_continuous(labels = scales::percent)
 
-
-# # count ILLIQ type by volatility group
-# ILLIQ_type_cnt <- data_merged %>% 
-#   group_by(sd_type) %>%
-#   count(ILLIQ_type) %>%
-#   pivot_wider(
-#     id_cols = sd_type,
-#     values_from = n,
-#     names_from = ILLIQ_type,
-#     names_sep = ""
-#   )
-# 
 # mktcap_trend <- data_merged %>%
 #   group_by(date, sd_type) %>%
 #   mutate(
