@@ -321,6 +321,26 @@ portf_cum_line %>%
   labs(y = "Cumulative returns") +
   scale_y_continuous(labels = scales::percent)
 
+# draw all sd portfolio
+portf_sd_cum_line <- portf_cum %>%
+  pivot_longer(
+    cols = c("Mkt_cum",
+             "RF_cum", 
+             "sd_1_cum", 
+             "sd_2_cum",
+             "sd_3_cum",
+             "sd_4_cum",
+             "sd_5_cum",
+             ),
+    names_to = "portf_type",
+    values_to = "cum_ret"
+  )
+
+portf_sd_cum_line %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = cum_ret, color = portf_type)) +
+  labs(y = "Cumulative returns") +
+  scale_y_continuous(labels = scales::percent)
 # mktcap_trend <- data_merged %>%
 #   group_by(date, sd_type) %>%
 #   mutate(
