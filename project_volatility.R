@@ -2,6 +2,7 @@ library(tidyverse)
 library(lubridate)
 library(PerformanceAnalytics)
 library(ggplot2)
+library(ggthemes)
 library(GRS.test)
 library(lmtest)
 library(sandwich)
@@ -248,7 +249,8 @@ ggplot(plot_df, aes(x = Pred_Ret, y = Act_Ret)) +
   xlab("Predicted mean of excess returns") +
   ylab("Realized average excess returns") +
   scale_x_continuous(labels = scales::percent) +
-  scale_y_continuous(labels = scales::percent)
+  scale_y_continuous(labels = scales::percent) +
+  theme_solarized_2(light=FALSE)
 
 # make long-short portfolio
 portf <- portf %>%
@@ -320,7 +322,8 @@ portf_cum_line %>%
   ggplot(aes(x = date)) +
   geom_line(aes(y = cum_ret, color = portf_type)) +
   labs(y = "Cumulative returns") +
-  scale_y_continuous(labels = scales::percent)
+  scale_y_continuous(labels = scales::percent) +
+  theme_solarized_2(light=FALSE)
 
 # draw all sd portfolio
 portf_sd_cum_line <- portf_cum %>%
@@ -341,7 +344,8 @@ portf_sd_cum_line %>%
   ggplot(aes(x = date)) +
   geom_line(aes(y = cum_ret, color = portf_type)) +
   labs(y = "Cumulative returns") +
-  scale_y_continuous(labels = scales::percent)
+  scale_y_continuous(labels = scales::percent) +
+  theme_solarized_2(light=FALSE)
 # mktcap_trend <- data_merged %>%
 #   group_by(date, sd_type) %>%
 #   mutate(
