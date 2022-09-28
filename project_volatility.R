@@ -145,7 +145,7 @@ portf_sd <- portf_sd %>%
     month = month(date)
   )
 
-# valuate ILLIQ return
+# count ILLIQ type per sd_type
 portf_ILLIQ <- data_typed %>% 
   group_by(date,ILLIQ_type) %>% 
   summarise(vwret = weighted_mean(RET,w = weight, na.rm = T))
@@ -161,6 +161,16 @@ portf_ILLIQ <- portf_ILLIQ %>%
     year = year(date),
     month = month(date)
   )
+
+# count market capital type per sd_type
+mktcap_sd_type <- data_merged %>%
+  group_by(PERMNO) %>%
+  mutate(
+    mktcap_mean = mean(mktcap)
+  ) %>%
+  ungroup() %>%
+  select(PERMNO, sd_type, mktcap_mean) %>%
+  distinct()
 
 # read and merge market returns data
 
@@ -346,28 +356,3 @@ portf_sd_cum_line %>%
   labs(y = "Cumulative returns") +
   scale_y_continuous(labels = scales::percent) +
   theme_solarized_2(light=FALSE)
-# mktcap_trend <- data_merged %>%
-#   group_by(date, sd_type) %>%
-#   mutate(
-#     mktcap_mean = mean(mktcap)
-#   ) %>%
-#   ungroup() %>%
-#   select(date, sd_type, mktcap_mean) %>%
-#   distinct() %>%
-#   arrange(date, sd_type)
-# 
-# ggplot(mktcap_trend, aes(x = date, y = mktcap_mean, color = sd_type)) +
-#   geom_line()
-
-# # explore market capital distribution per sd_type
-# mktcap_sd_type <- data_merged %>%
-#   group_by(PERMNO) %>%
-#   mutate(
-#     mktcap_mean = mean(mktcap)
-#   ) %>%
-#   ungroup() %>%
-#   select(PERMNO, sd_type, mktcap_mean) %>%
-#   distinct()
-# 
-# ggplot(mktcap_sd_type, aes(x = sd_type, y = mktcap_mean)) +
-#   geom_boxplot()
