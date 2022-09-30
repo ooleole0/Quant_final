@@ -285,18 +285,6 @@ sharpe_annual <- SharpeRatio.annualized(portf_sharpe[, 1:9], portf_sharpe$RF) %>
     values_to = "sharpe_ratio"
   )
 
-# calculate information ratio
-portf_info <- portf %>%
-  select(sd_1:sd_5, sd_LMH,SMB, HML, Mkt) %>%
-  xts(order.by = portf$date)
-
-info <- InformationRatio(portf_info[, 1:8], portf_info[, 9])
-
-# # draw sharpe ratio scatter plot
-# sharpe %>%
-#   ggplot(aes(x = portf_type, y = sharpe_ratio)) +
-#   geom_point()
-
 # calculate cumulative returns
 portf_cum <- portf %>%
   mutate(
